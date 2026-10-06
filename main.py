@@ -46,19 +46,15 @@ async def process_voice_input(file: UploadFile = File(...)):
         print(f"[Agent Response]: {agent_response_text}")
 
         # 3. Text-to-Speech
-        audio_response_bytes = await tts.text_to_speech_bytes(agent_response_text)
+        audio_output = tts.synthesize(agent_response_text)
 
-        # Return audio payload
+        # Return audio stream/file to client
         return Response(
-            content=audio_response_bytes,
+            content=audio_output, 
             media_type="audio/mpeg",
             headers={"Content-Disposition": "inline; filename=response.mp3"}
         )
 
     except Exception as e:
-        print(f"[Pipeline Failure]: {e}")
+        print(f"[Error]: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
