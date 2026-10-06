@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from deepgram import DeepgramClient, PrerecordedOptions
+from deepgram import DeepgramClient
 
 load_dotenv()
 
@@ -14,10 +14,10 @@ class STTEngine:
     async def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.wav") -> str:
         try:
             payload = {"buffer": audio_bytes}
-            options = PrerecordedOptions(
-                model="nova-2",
-                smart_format=True,
-            )
+            options = {
+                "model": "nova-2",
+                "smart_format": True,
+            }
             response = await self.dg_client.listen.asyncprerecorded.v("1").transcribe_file(
                 payload, options
             )
