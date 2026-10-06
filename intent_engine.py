@@ -1,8 +1,9 @@
 import json
+import os
 from enum import Enum
 from pydantic import BaseModel, Field
-from groq import AsyncGroq
-from config import settings
+from google import genai
+from google.genai import types
 
 class IntentCategory(str, Enum):
     GREETING = "GREETING"
@@ -19,11 +20,11 @@ class UserIntent(BaseModel):
 
 class IntentEngine:
     def __init__(self):
-        self.client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
     async def classify_intent(self, user_text: str) -> UserIntent:
         """
-        Classifies user intent into predefined categories using Groq Llama 3 JSON mode.
+        Classifies user intent using Gemini 2.5 Flash in Structured JSON output mode.
         """
         system_prompt = (
             "You are an intent classification system for a voice agent. "
@@ -38,17 +39,15 @@ class IntentEngine:
         )
 
         try:
-            response = await self.client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"User said: '{user_text}'"}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.0
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=f"{system_prompt}\nUser said: '{user_text}'",
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.0,
+                ),
             )
-            raw_json = response.choices[0].message.content
-            parsed = json.loads(raw_json)
+            parsed = json.loads(response.text)
             return UserIntent(**parsed)
         except Exception as e:
             print(f"[Intent Engine Error]: {e}")
