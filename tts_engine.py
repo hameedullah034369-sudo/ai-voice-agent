@@ -1,10 +1,11 @@
-import io
 from gtts import gTTS
+import io
 
-def text_to_speech(text: str) -> bytes:
-    # Google TTS se text ko MP3 bytes mein convert karta hai
-    tts = gTTS(text=text, lang='en')
-    fp = io.BytesIO()
-    tts.write_to_fp(fp)
-    fp.seek(0)
-    return fp.read()
+class TTSEngine:
+    def synthesize(self, text: str) -> bytes:
+        """Converts text into audio bytes using gTTS."""
+        tts = gTTS(text=text, lang='en')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return fp.read()
