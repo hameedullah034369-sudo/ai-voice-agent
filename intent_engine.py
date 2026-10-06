@@ -39,7 +39,7 @@ class IntentEngine:
 
         try:
             response = await self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"User said: '{user_text}'"}
