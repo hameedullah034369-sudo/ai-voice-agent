@@ -9,12 +9,11 @@ class STTEngine:
         api_key = os.getenv("DEEPGRAM_API_KEY")
         if not api_key:
             print("[STT Warning]: DEEPGRAM_API_KEY missing in .env")
-        self.dg_client = DeepgramClient(api_key)
+        self.dg_client = DeepgramClient(api_key=api_key)
 
     async def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.wav") -> str:
         try:
             payload = {"buffer": audio_bytes}
-            # SDK v3 dictionary configuration support karta hai
             options = {
                 "model": "nova-2",
                 "smart_format": True,
