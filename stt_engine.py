@@ -14,6 +14,7 @@ class STTEngine:
     async def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.wav") -> str:
         try:
             payload = {"buffer": audio_bytes}
+            # SDK v3 dictionary configuration support karta hai
             options = {
                 "model": "nova-2",
                 "smart_format": True,
