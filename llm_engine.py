@@ -1,36 +1,22 @@
-from typing import AsyncGenerator
-from groq import AsyncGroq
-from config import settings
+import os
+from google import genai
 
 class LLMEngine:
     def __init__(self):
-        self.client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-    async def generate_response_stream(self, prompt: str) -> AsyncGenerator[str, None]:
+    async def generate_response_stream(self, prompt: str):
         """
-        Generates a fast, streaming response using Llama 3 on Groq LPUs.
+        Generates streaming response using Gemini 2.5 Flash.
         """
         try:
-            stream = await self.client.chat.completions.create(
-               model="llama3-8b-8192",  
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a professional, helpful voice assistant. "
-                            "Keep your answers brief, clear, and natural for speech synthesis (1-3 sentences)."
-                        )
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                stream=True,
-                max_tokens=150,
-                temperature=0.7
+            response = self.client.models.generate_content_stream(
+                model='gemini-2.5-flash',
+                contents=prompt,
             )
-            async for chunk in stream:
-                content = chunk.choices[0].delta.content
-                if content:
-                    yield content
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
         except Exception as e:
             print(f"[LLM Error]: {e}")
             yield "I am sorry, I encountered an issue processing your request."
