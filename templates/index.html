@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Agent Dashboard</title>
+    <!-- Tailwind CSS for sleek modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    Voice AI Assistant <span class="text-xs px-2 py-0.5 rounded border border-emerald-500/30 text-emerald-400 font-mono">Day 2</span>
+                </h1>
+            </div>
+            <div class="flex items-center space-x-4 text-xs font-mono">
+                <span id="systemState" class="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    State: WELCOME
+                </span>
+                <span id="detectedIntent" class="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    Intent: NONE
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Left Panel: Voice Control Center -->
+        <div class="md:col-span-1 bg-slate-900/80 rounded-2xl border border-slate-800 p-6 flex flex-col justify-between shadow-xl">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Control Console</h2>
+                
+                <!-- Status Display -->
+                <div class="text-center py-8">
+                    <div id="micRing" class="relative inline-flex items-center justify-center p-6 rounded-full bg-slate-800 border-2 border-slate-700 mb-4 transition-all duration-300">
+                        <i id="micIcon" class="fas fa-microphone text-3xl text-emerald-400"></i>
+                    </div>
+                    <p id="statusLabel" class="text-slate-300 text-sm font-medium">Click to start speaking</p>
+                    <p id="subStatus" class="text-slate-500 text-xs mt-1">Audio will process instantly upon stop</p>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button id="recordBtn" onclick="toggleRecording()" 
+                class="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2">
+                <i class="fas fa-play"></i>
+                <span id="btnText">Start Recording</span>
+            </button>
+        </div>
+
+        <!-- Right Panel: Conversation Stream -->
+        <div class="md:col-span-2 bg-slate-900/80 rounded-2xl border border-slate-800 p-6 flex flex-col h-[520px] shadow-xl">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Real-time Transcript</h2>
+            
+            <div id="transcriptBox" class="flex-1 overflow-y-auto space-y-4 pr-2 text-sm">
+                <!-- Welcome Message -->
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold">AI</div>
+                    <div class="bg-slate-800 border border-slate-700/50 rounded-2xl p-4 max-w-lg text-slate-300">
+                        Hello! I am your AI Voice Assistant. How can I help you today?
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Client-Side JavaScript Logic -->
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = uploadAndProcessAudio;
+
+                    mediaRecorder.start();
+                    isRecording = true;
+
+                    // Update UI state
+                    document.getElementById('recordBtn').className = "w-full py-3.5 px-4 bg-rose-500 hover:bg-rose-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-rose-500/20 flex items-center justify-center space-x-2";
+                    document.getElementById('btnText').innerText = "Stop & Process";
+                    document.getElementById('statusLabel').innerText = "Listening...";
+                    document.getElementById('micRing').className = "relative inline-flex items-center justify-center p-6 rounded-full bg-rose-500/10 border-2 border-rose-500 animate-pulse mb-4";
+                    document.getElementById('micIcon').className = "fas fa-microphone text-3xl text-rose-500";
+                } catch (err) {
+                    alert("Microphone access denied or unverified: " + err);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+
+                // Reset Button State
+                document.getElementById('recordBtn').className = "w-full py-3.5 px-4 bg-slate-800 text-slate-400 font-semibold rounded-xl cursor-not-allowed flex items-center justify-center space-x-2";
+                document.getElementById('btnText').innerText = "Processing Audio...";
+                document.getElementById('statusLabel').innerText = "Analyzing response...";
+            }
+        }
+
+        async function uploadAndProcessAudio() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'input.wav');
+
+            try {
+                const response = await fetch('/api/v1/process-voice', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Processing error");
+
+                // Extract custom headers
+                const intent = response.headers.get('X-Detected-Intent') || 'UNKNOWN';
+                const state = response.headers.get('X-Conversation-State') || 'ACTIVE';
+
+                // Update Badges
+                document.getElementById('detectedIntent').innerText = `Intent: ${intent}`;
+                document.getElementById('systemState').innerText = `State: ${state}`;
+
+                // Play Audio Response
+                const audioBytes = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBytes);
+                const audio = new Audio(audioUrl);
+                audio.play();
+
+                // Append Transcript Entry (Simulated visual feedback)
+                appendTranscript("User Speech", "Audio message transmitted successfully.", "USER");
+
+            } catch (err) {
+                console.error(err);
+                alert("Error processing audio query.");
+            } finally {
+                // Restore button state
+                document.getElementById('recordBtn').className = "w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2";
+                document.getElementById('btnText').innerText = "Start Recording";
+                document.getElementById('statusLabel').innerText = "Click to start speaking";
+                document.getElementById('micRing').className = "relative inline-flex items-center justify-center p-6 rounded-full bg-slate-800 border-2 border-slate-700 mb-4";
+                document.getElementById('micIcon').className = "fas fa-microphone text-3xl text-emerald-400";
+            }
+        }
+
+        function appendTranscript(sender, message, type) {
+            const box = document.getElementById('transcriptBox');
+            const alignClass = type === 'USER' ? 'justify-end' : 'justify-start';
+            const bgClass = type === 'USER' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-slate-800 border-slate-700/50 text-slate-300';
+            
+            const html = `
+                <div class="flex items-start space-x-3 ${alignClass}">
+                    <div class="bg-slate-800 border ${bgClass} border rounded-2xl p-4 max-w-lg">
+                        <p class="text-xs text-slate-400 font-mono mb-1">${sender}</p>
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+            box.innerHTML += html;
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>
