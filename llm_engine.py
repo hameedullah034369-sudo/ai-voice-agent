@@ -26,7 +26,7 @@ class LLMEngine:
             )
 
             response = self.client.models.generate_content_stream(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=user_prompt,
                 config=config
             )

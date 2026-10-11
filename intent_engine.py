@@ -24,7 +24,7 @@ class IntentEngine:
 
     async def classify_intent(self, user_text: str) -> UserIntent:
         """
-        Classifies user intent using Gemini 2.5 Flash in Structured JSON output mode.
+        Classifies user intent using gemini-3.8-flash Flash in Structured JSON output mode.
         """
         system_prompt = (
             "You are an intent classification system for a voice agent. "
@@ -40,7 +40,7 @@ class IntentEngine:
 
         try:
             response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.8-flash',
                 contents=f"{system_prompt}\nUser said: '{user_text}'",
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
